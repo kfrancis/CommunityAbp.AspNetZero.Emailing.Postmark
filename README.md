@@ -41,6 +41,133 @@ dotnet add package CommunityAbp.AspNetZero.Emailing.Postmark
 }
 ```
 
+## Features
+
+### Email Sending
+- [x] Basic email sending support
+- [x] HTML and plain text email bodies
+- [x] Multiple recipients (To, CC, BCC)
+- [x] Custom From address support
+- [x] Default From address fallback from configuration
+
+### Template Support
+- [x] Postmark template integration
+- [x] Template ID support (numeric identifier)
+- [x] Template alias support (string identifier)
+- [x] Dynamic template model binding
+- [x] JSON serialization of template models
+
+### Attachments
+- [x] File attachment support
+- [x] Multiple attachments per email
+- [x] Content-type detection
+- [x] Base64 encoding handling
+- [x] Stream position handling
+
+### Configuration & Setup
+- [x] Easy module integration with AbpModule
+- [x] Automatic dependency injection setup
+- [x] Configurable API key
+- [x] Configurable sender email
+- [x] Custom PostmarkClient configuration support
+
+### Logging & Diagnostics
+- [x] Structured logging throughout
+- [x] Debug level operational logs
+- [x] Information level success logs
+- [x] Error level failure logs
+- [x] Attachment processing logs
+- [x] Template usage logs
+- [x] Message ID tracking
+
+### Framework Support
+- [x] .NET Standard 2.0 support
+- [x] .NET Standard 2.1 support
+- [x] .NET 8.0 support
+
+### Developer Experience
+- [x] Fluent API for template usage
+- [x] Extension methods for common operations
+- [x] Clear exception messages
+- [x] Consistent with ABP patterns
+- [x] Minimal configuration required
+
+## Not Yet Implemented
+- [ ] Batch email sending
+- [ ] Email open tracking
+- [ ] Click tracking
+- [ ] Bounce handling
+- [ ] Webhook support
+- [ ] Message stream support
+- [ ] Server-level configuration
+- [ ] Retry policies
+
+## Postmark Templates 
+
+### Template Identification
+- Postmark supports two ways to identify templates:
+    - `TemplateId`: A numeric identifier (e.g., 1234567)
+    - `TemplateAlias`: A string identifier (e.g., "welcome-email")
+- These are stored in the mail headers using custom X-headers:
+
+```csharp
+mail.Headers["X-Postmark-Template-Id"] = "1234567";
+// OR
+mail.Headers["X-Postmark-Template-Alias"] = "welcome-email";
+```
+
+### Template Model
+
+- The template model contains the variables that will be merged into your template
+- It's stored as JSON in the mail body
+- Example template model:
+```json
+{
+  "userName": "John Doe",
+  "confirmationLink": "https://example.com/confirm/123",
+  "expiryDate": "2024-02-01"
+}
+```
+
+### Full Template Example
+
+```csharp
+// Example 1: Using Template ID
+var mail = new MailMessage();
+mail.To.Add("user@example.com");
+mail.UseTemplate(1234567, new { 
+    userName = "John Doe",
+    confirmationLink = "https://example.com/confirm/123"
+});
+
+// Example 2: Using Template Alias
+var mail = new MailMessage();
+mail.To.Add("user@example.com");
+mail.UseTemplate("welcome-email", new { 
+    userName = "John Doe",
+    confirmationLink = "https://example.com/confirm/123"
+});
+```
+
+## Attachments
+
+Here's an example of how to send attachments:
+
+```csharp
+var mail = new MailMessage();
+mail.To.Add("recipient@example.com");
+mail.Subject = "Test with attachment";
+
+// Adding a file attachment
+mail.Attachments.Add(new Attachment("document.pdf", "application/pdf"));
+
+// For templated emails with attachments
+mail.UseTemplate("welcome-email", new { UserName = "John" });
+
+await _emailSender.SendEmailAsync(mail);
+```
+
+
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
