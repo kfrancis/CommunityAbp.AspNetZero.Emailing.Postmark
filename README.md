@@ -36,7 +36,6 @@ dotnet add package CommunityAbp.AspNetZero.Emailing.Postmark
 {
   "Postmark": {
     "ApiKey": "your-api-key",
-    "ServerToken": "your-server-token",
     "FromAddress": "sender@yourdomain.com"
   }
 }
