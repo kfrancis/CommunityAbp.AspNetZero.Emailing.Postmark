@@ -8,7 +8,6 @@ using Abp.Dependency;
 using Abp.Net.Mail;
 using Abp.Reflection.Extensions;
 using PostmarkDotNet;
-using PostmarkDotNet.Legacy;
 using Abp.Threading;
 using System.Linq;
 using System.Collections.Generic;
@@ -38,7 +37,7 @@ public class AbpPostmarkModule : AbpModule
 }
 
 /// <summary>
-/// Postmark configuration 
+/// Postmark configuration
 /// </summary>
 public interface IAbpPostmarkConfiguration
 {
@@ -47,7 +46,7 @@ public interface IAbpPostmarkConfiguration
 }
 
 /// <summary>
-/// Postmark configuration 
+/// Postmark configuration
 /// </summary>
 public class AbpPostmarkConfiguration : IAbpPostmarkConfiguration
 {
@@ -82,7 +81,7 @@ public class PostmarkClientWrapper : IPostmarkClientWrapper
 }
 
 /// <summary>
-/// The Postmark-based email sender implementation 
+/// The Postmark-based email sender implementation
 /// </summary>
 public class PostmarkEmailSender : EmailSenderBase
 {
@@ -133,7 +132,7 @@ public class PostmarkEmailSender : EmailSenderBase
     }
 
     /// <summary>
-    /// Converts the mail message into a templated Postmark email message and sends it 
+    /// Converts the mail message into a templated Postmark email message and sends it
     /// </summary>
     /// <param name="client">The Postmark client to use for sending the email</param>
     /// <param name="mail">
@@ -165,7 +164,7 @@ public class PostmarkEmailSender : EmailSenderBase
     }
 
     /// <summary>
-    /// Converts the mail message into a non-templated Postmark email message and sends it 
+    /// Converts the mail message into a non-templated Postmark email message and sends it
     /// </summary>
     /// <param name="client">The Postmark client to use for sending the email</param>
     /// <param name="mail">
@@ -195,7 +194,7 @@ public class PostmarkEmailSender : EmailSenderBase
     }
 
     /// <summary>
-    /// Checks the mail message headers to determine if Postmark template information was provided 
+    /// Checks the mail message headers to determine if Postmark template information was provided
     /// </summary>
     /// <param name="mail">
     /// The mail message to check
@@ -212,7 +211,7 @@ public class PostmarkEmailSender : EmailSenderBase
     private async Task<PostmarkMessage> CreateBasicMessageAsync(MailMessage mail)
     {
         Logger.LogDebug("Creating basic message with {AttachmentCount} attachments",
-            mail.Attachments?.Count ?? 0);
+            mail.Attachments.Count);
 
         var abpConfig = IocManager.Instance.Resolve<IAbpPostmarkConfiguration>();
 
@@ -226,7 +225,7 @@ public class PostmarkEmailSender : EmailSenderBase
             Cc = mail.CC.Count > 0 ? string.Join(",", mail.CC.Select(x => x.Address)) : null,
             Bcc = mail.Bcc.Count > 0 ? string.Join(",", mail.Bcc.Select(x => x.Address)) : null,
             Attachments = await CreateAttachmentsAsync(mail.Attachments),
-            TrackOpens = abpConfig.TrackOpens    
+            TrackOpens = abpConfig.TrackOpens
         };
 
         return message;
@@ -284,12 +283,12 @@ public class PostmarkEmailSender : EmailSenderBase
                 {
                     Name = attachment.Name,
                     Content = Convert.ToBase64String(memoryStream.ToArray()),
-                    ContentType = attachment.ContentType?.MediaType ?? "application/octet-stream"
+                    ContentType = attachment.ContentType.MediaType
                 });
 
                 Logger.LogDebug("Processed attachment: {AttachmentName} ({ContentType})",
                     attachment.Name,
-                    attachment.ContentType?.MediaType ?? "application/octet-stream");
+                    attachment.ContentType.MediaType);
 
                 if (attachment.ContentStream.CanSeek)
                 {
@@ -423,14 +422,14 @@ public class TestablePostmarkEmailSender : PostmarkEmailSender
     // Make the synchronous method public as well
     public new void SendEmail(MailMessage mail)
     {
-        Abp.Threading.AsyncHelper.RunSync(() => SendEmailAsync(mail));
+        AsyncHelper.RunSync(() => SendEmailAsync(mail));
     }
 
     private void HandleResponse(PostmarkResponse response)
     {
         if (response.Status != PostmarkStatus.Success)
         {
-            throw new Abp.AbpException($"Failed to send email via Postmark: {response.Message}");
+            throw new AbpException($"Failed to send email via Postmark: {response.Message}");
         }
     }
 
