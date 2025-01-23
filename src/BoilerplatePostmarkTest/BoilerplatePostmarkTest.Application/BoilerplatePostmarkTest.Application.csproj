@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Version>1.0.0.0</Version>
+    <AssetTargetFallback>$(AssetTargetFallback);portable-net45+win8+wp8+wpa81;</AssetTargetFallback>
+    <AssemblyName>BoilerplatePostmarkTest.Application</AssemblyName>
+    <PackageId>BoilerplatePostmarkTest.Application</PackageId>
+    <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
+    <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
+    <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
+    <RootNamespace>BoilerplatePostmarkTest</RootNamespace>
+    <TargetFramework>net8.0</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\CommunityAbp.AspNetZero.Emailing.Postmark\CommunityAbp.AspNetZero.Emailing.Postmark.csproj" />
+    <ProjectReference Include="..\BoilerplatePostmarkTest.Core\BoilerplatePostmarkTest.Core.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Abp.EntityFrameworkCore" Version="9.4.1" />
+    <PackageReference Include="Abp.AutoMapper" Version="9.4.1" />
+  </ItemGroup>
+</Project>
