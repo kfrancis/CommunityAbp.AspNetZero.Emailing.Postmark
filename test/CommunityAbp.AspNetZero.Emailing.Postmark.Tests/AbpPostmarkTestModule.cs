@@ -35,17 +35,6 @@ namespace CommunityAbp.AspNetZero.Emailing.Postmark.Tests
     [DependsOn(typeof(AbpPostmarkModule), typeof(AbpTestBaseModule))]
     public class AbpPostmarkTestModule : AbpModule
     {
-        public AbpPostmarkTestModule()
-        {
-
-        }
-        public override void PostInitialize()
-        {
-            // Now it's safe to resolve and set up your configuration
-            var abpConfiguration = IocManager.Resolve<IAbpStartupConfiguration>();
-            var postmarkConfig = abpConfiguration.Get<IAbpPostmarkConfiguration>();
-            postmarkConfig.ApiKey = "test-api-key";
-        }
 
         public override void PreInitialize()
         {
