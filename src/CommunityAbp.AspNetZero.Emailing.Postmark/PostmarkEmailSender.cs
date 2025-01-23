@@ -19,12 +19,15 @@ namespace CommunityAbp.AspNetZero.Emailing.Postmark;
 /// </summary>
 public class PostmarkEmailSender : EmailSenderBase
 {
+    private readonly IAbpPostmarkConfiguration _abpPostmarkConfiguration;
     private readonly IPostmarkClientBuilder _clientBuilder;
 
     public PostmarkEmailSender(
         IEmailSenderConfiguration configuration,
+        IAbpPostmarkConfiguration abpPostmarkConfiguration,
         IPostmarkClientBuilder clientBuilder) : base(configuration)
     {
+        _abpPostmarkConfiguration = abpPostmarkConfiguration;
         _clientBuilder = clientBuilder;
         Logger = NullLogger.Instance;
     }
@@ -148,8 +151,7 @@ public class PostmarkEmailSender : EmailSenderBase
         Logger.LogDebug("Creating basic message with {AttachmentCount} attachments",
             mail.Attachments.Count);
 
-        var abpConfig = IocManager.Instance.Resolve<IAbpPostmarkConfiguration>();
-        var defaultFromAddress = abpConfig.DefaultFromAddress ?? Configuration.DefaultFromAddress;
+        var defaultFromAddress = _abpPostmarkConfiguration.DefaultFromAddress ?? Configuration.DefaultFromAddress;
         var message = new PostmarkMessage
         {
             From = defaultFromAddress ?? mail.From?.Address,
@@ -160,7 +162,7 @@ public class PostmarkEmailSender : EmailSenderBase
             Cc = mail.CC.Count > 0 ? string.Join(",", mail.CC.Select(x => x.Address)) : null,
             Bcc = mail.Bcc.Count > 0 ? string.Join(",", mail.Bcc.Select(x => x.Address)) : null,
             Attachments = await CreateAttachmentsAsync(mail.Attachments),
-            TrackOpens = abpConfig.TrackOpens
+            TrackOpens = _abpPostmarkConfiguration.TrackOpens
         };
 
         return message;
@@ -175,15 +177,15 @@ public class PostmarkEmailSender : EmailSenderBase
             templateIdHeader ?? string.Empty,
             templateAliasHeader ?? string.Empty);
 
-        var abpConfig = IocManager.Instance.Resolve<IAbpPostmarkConfiguration>();
-
         var templateId = !string.IsNullOrEmpty(templateIdHeader)
             ? Convert.ToInt64(templateIdHeader)
             : (long?)null;
 
+        var defaultFromAddress = _abpPostmarkConfiguration.DefaultFromAddress ?? Configuration.DefaultFromAddress;
+
         var message = new TemplatedPostmarkMessage
         {
-            From = mail.From?.Address ?? Configuration.DefaultFromAddress,
+            From = defaultFromAddress ?? mail.From?.Address,
             To = string.Join(",", mail.To.Select(x => x.Address)),
             Cc = mail.CC.Count > 0 ? string.Join(",", mail.CC.Select(x => x.Address)) : null,
             Bcc = mail.Bcc.Count > 0 ? string.Join(",", mail.Bcc.Select(x => x.Address)) : null,
@@ -191,7 +193,7 @@ public class PostmarkEmailSender : EmailSenderBase
             TemplateAlias = templateAliasHeader,
             TemplateModel = ExtractTemplateModel(mail),
             Attachments = await CreateAttachmentsAsync(mail.Attachments),
-            TrackOpens = abpConfig.TrackOpens
+            TrackOpens = _abpPostmarkConfiguration.TrackOpens
         };
 
         return message;

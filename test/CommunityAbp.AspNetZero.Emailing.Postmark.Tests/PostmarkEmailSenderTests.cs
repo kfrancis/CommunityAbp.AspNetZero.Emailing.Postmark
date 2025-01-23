@@ -11,7 +11,7 @@ using Attachment = System.Net.Mail.Attachment;
 
 namespace CommunityAbp.AspNetZero.Emailing.Postmark.Tests
 {
-    public class PostmarkEmailSenderTests : AbpIntegratedTestBase<AbpPostmarkModule>
+    public class PostmarkEmailSenderTests : AbpPostmarkTestBase
     {
         private readonly IPostmarkClientBuilder _mockClientBuilder;
         private readonly IPostmarkClientWrapper _mockClientWrapper;
@@ -34,27 +34,15 @@ namespace CommunityAbp.AspNetZero.Emailing.Postmark.Tests
             _mockPostmarkConfiguration.ApiKey.Returns("test-api-key");
             _mockPostmarkConfiguration.TrackOpens.Returns(true);
 
-            // Register dependencies in IoC container
-            LocalIocManager.IocContainer.Register(
-                Component.For<IAbpPostmarkConfiguration>()
-                    .Instance(_mockPostmarkConfiguration)
-                    .LifestyleSingleton());
-
             // Create test subject
             _sut = new TestablePostmarkEmailSender(
                 _mockConfiguration,
+                _mockPostmarkConfiguration,
                 _mockClientBuilder,
                 _mockClientWrapper)
             {
                 Logger = _mockLogger
             };
-        }
-
-        protected override void PostInitialize()
-        {
-            // Get configuration from test module
-            var configuration = LocalIocManager.Resolve<IAbpStartupConfiguration>();
-            configuration.Get<IAbpPostmarkConfiguration>().ApiKey = "test-api-key";
         }
 
         [Fact]

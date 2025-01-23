@@ -20,9 +20,10 @@ namespace CommunityAbp.AspNetZero.Emailing.Postmark
 
         public TestablePostmarkEmailSender(
             IEmailSenderConfiguration configuration,
+            IAbpPostmarkConfiguration abpPostmarkConfiguration,
             IPostmarkClientBuilder clientBuilder,
             IPostmarkClientWrapper clientWrapper)
-            : base(configuration, clientBuilder)
+            : base(configuration, abpPostmarkConfiguration, clientBuilder)
         {
             _clientWrapper = clientWrapper;
         }
