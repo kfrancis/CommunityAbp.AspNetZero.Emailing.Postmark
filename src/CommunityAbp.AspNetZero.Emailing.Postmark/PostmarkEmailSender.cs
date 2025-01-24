@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Mail;
+using System.Numerics;
 using System.Threading.Tasks;
 using Abp;
 using Abp.Dependency;
@@ -11,6 +12,7 @@ using Abp.Threading;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using PostmarkDotNet;
+using PostmarkDotNet.Model;
 
 namespace CommunityAbp.AspNetZero.Emailing.Postmark;
 
@@ -21,6 +23,10 @@ public class PostmarkEmailSender : EmailSenderBase
 {
     private readonly IAbpPostmarkConfiguration _abpPostmarkConfiguration;
     private readonly IPostmarkClientBuilder _clientBuilder;
+    public const string TemplateIdHeader = "X-Postmark-Template-Id";
+    public const string TemplateAliasHeader = "X-Postmark-Template-Alias";
+    public const string TagHeader = "X-Postmark-Tag";
+    public const string TrackLinksHeader = "X-Postmark-TrackLinks";
 
     public PostmarkEmailSender(
         IEmailSenderConfiguration configuration,
@@ -41,6 +47,11 @@ public class PostmarkEmailSender : EmailSenderBase
 
     protected override async Task SendEmailAsync(MailMessage mail)
     {
+        if (mail == null)
+        {
+            throw new ArgumentNullException(nameof(mail));
+        }
+
         var client = _clientBuilder.Build();
 
         try
@@ -97,8 +108,13 @@ public class PostmarkEmailSender : EmailSenderBase
     /// </returns>
     private static bool IsTemplatedEmail(MailMessage mail)
     {
-        return mail.Headers["X-Postmark-Template-Id"] != null ||
-               mail.Headers["X-Postmark-Template-Alias"] != null;
+        if (mail == null)
+        {
+            throw new ArgumentNullException(nameof(mail));
+        }
+
+        return mail.Headers[TemplateIdHeader] != null ||
+               mail.Headers[TemplateAliasHeader] != null;
     }
 
     private async Task<List<PostmarkMessageAttachment>?> CreateAttachmentsAsync(AttachmentCollection? attachments)
@@ -148,6 +164,8 @@ public class PostmarkEmailSender : EmailSenderBase
 
     private async Task<PostmarkMessage> CreateBasicMessageAsync(MailMessage mail)
     {
+        ValidateMail(mail);
+
         Logger.LogDebug("Creating basic message with {AttachmentCount} attachments",
             mail.Attachments.Count);
 
@@ -161,17 +179,43 @@ public class PostmarkEmailSender : EmailSenderBase
             HtmlBody = mail.IsBodyHtml ? mail.Body : null,
             Cc = mail.CC.Count > 0 ? string.Join(",", mail.CC.Select(x => x.Address)) : null,
             Bcc = mail.Bcc.Count > 0 ? string.Join(",", mail.Bcc.Select(x => x.Address)) : null,
+            ReplyTo = mail.ReplyToList.Count > 0 ? string.Join(",", mail.ReplyToList.Select(x => x.Address)) : null,
             Attachments = await CreateAttachmentsAsync(mail.Attachments),
+            Tag = mail.Headers[TagHeader],
             TrackOpens = _abpPostmarkConfiguration.TrackOpens
         };
+
+        if (bool.TryParse(mail.Headers[TrackLinksHeader], out var shouldTrack))
+        {
+            message.TrackLinks = shouldTrack ? LinkTrackingOptions.HtmlAndText : LinkTrackingOptions.None;
+        }
+
+        // If there are any headers in the mail message, convert them and add them to the postmark message
+        if (mail.Headers.Count <= 0)
+        {
+            return message;
+        }
+
+        Logger.LogDebug("Processing {HeaderCount} headers", mail.Headers.Count);
+        var headers = new HeaderCollection();
+        foreach (var headerKey in mail.Headers.AllKeys.Except([TemplateIdHeader, TemplateAliasHeader]))
+        {
+            headers.Add(new MailHeader(headerKey, mail.Headers[headerKey]));
+            Logger.LogDebug("Added header: {HeaderKey} = {HeaderValue}",
+                headerKey,
+                mail.Headers[headerKey]);
+        }
+        message.Headers = headers;
 
         return message;
     }
 
     private async Task<TemplatedPostmarkMessage> CreateTemplatedMessageAsync(MailMessage mail)
     {
-        var templateIdHeader = mail.Headers["X-Postmark-Template-Id"];
-        var templateAliasHeader = mail.Headers["X-Postmark-Template-Alias"];
+        ValidateMail(mail);
+
+        var templateIdHeader = mail.Headers[TemplateIdHeader];
+        var templateAliasHeader = mail.Headers[TemplateAliasHeader];
 
         Logger.LogDebug("Creating templated message. Template ID: {TemplateId}, Template Alias: {TemplateAlias}",
             templateIdHeader ?? string.Empty,
@@ -189,14 +233,41 @@ public class PostmarkEmailSender : EmailSenderBase
             To = string.Join(",", mail.To.Select(x => x.Address)),
             Cc = mail.CC.Count > 0 ? string.Join(",", mail.CC.Select(x => x.Address)) : null,
             Bcc = mail.Bcc.Count > 0 ? string.Join(",", mail.Bcc.Select(x => x.Address)) : null,
+            ReplyTo = mail.ReplyToList.Count > 0 ? string.Join(",", mail.ReplyToList.Select(x => x.Address)) : null,
             TemplateId = templateId,
             TemplateAlias = templateAliasHeader,
             TemplateModel = ExtractTemplateModel(mail),
             Attachments = await CreateAttachmentsAsync(mail.Attachments),
-            TrackOpens = _abpPostmarkConfiguration.TrackOpens
+            TrackOpens = _abpPostmarkConfiguration.TrackOpens,
+            Tag = mail.Headers[TagHeader]
         };
 
+        if (bool.TryParse(mail.Headers[TrackLinksHeader], out var shouldTrack))
+        {
+            message.TrackLinks = shouldTrack ? LinkTrackingOptions.HtmlAndText : LinkTrackingOptions.None;
+        }
+
+        Logger.LogDebug("Processing {HeaderCount} headers", mail.Headers.Count);
+        var headers = new HeaderCollection();
+        foreach (var headerKey in mail.Headers.AllKeys.Except([TemplateIdHeader, TemplateAliasHeader]))
+        {
+            headers.Add(new MailHeader(headerKey, mail.Headers[headerKey]));
+            Logger.LogDebug("Added header: {HeaderKey} = {HeaderValue}",
+                headerKey,
+                mail.Headers[headerKey]);
+        }
+        message.Headers = headers;
+
         return message;
+    }
+
+    private static void ValidateMail(MailMessage mail)
+    {
+        // Make sure there are the basics required for sending, like a destination
+        if (mail.To.Count == 0)
+        {
+            throw new AbpException("No destination address specified in the email");
+        }
     }
 
     /// <summary>

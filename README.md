@@ -49,13 +49,17 @@ dotnet add package CommunityAbp.AspNetZero.Emailing.Postmark
 - [x] Multiple recipients (To, CC, BCC)
 - [x] Custom From address support
 - [x] Default From address fallback from configuration
+- [x] Custom headers 
 
-### Template Support
+### Postmark Feature Support
 - [x] Postmark template integration
 - [x] Template ID support (numeric identifier)
 - [x] Template alias support (string identifier)
 - [x] Dynamic template model binding
 - [x] JSON serialization of template models
+- [x] Email open tracking
+- [x] Click tracking
+- [x] Tag support
 
 ### Attachments
 - [x] File attachment support
@@ -94,8 +98,6 @@ dotnet add package CommunityAbp.AspNetZero.Emailing.Postmark
 
 ## Not Yet Implemented
 - [ ] Batch email sending
-- [ ] Email open tracking
-- [ ] Click tracking
 - [ ] Bounce handling
 - [ ] Webhook support
 - [ ] Message stream support

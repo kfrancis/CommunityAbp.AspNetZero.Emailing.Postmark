@@ -277,5 +277,206 @@ namespace CommunityAbp.AspNetZero.Emailing.Postmark.Tests
                 msg.TrackOpens == true
             ));
         }
+
+        [Fact]
+        public void BuildPostmarkClient_ShouldConfigureClientCorrectly()
+        {
+            // Test DefaultPostmarkClientBuilder
+            var config = Substitute.For<IAbpPostmarkConfiguration>();
+            config.ApiKey.Returns("test-key");
+
+            var builder = new DefaultPostmarkClientBuilder(config);
+            var client = builder.Build();
+
+            // Verify client was configured with API key
+            client.ShouldNotBeNull();
+        }
+
+        [Fact]
+        public async Task SendEmailAsync_WithEmptyRecipients_ShouldThrowException()
+        {
+            // Arrange
+            var mail = new MailMessage();
+
+            // Act & Assert
+            await Should.ThrowAsync<AbpException>(() => _sut.SendEmailAsync(mail));
+        }
+
+        [Fact]
+        public async Task CreateBasicMessageAsync_WithReplyTo_ShouldSetReplyToAddress()
+        {
+            // Arrange
+            var mail = new MailMessage
+            {
+                To = { new MailAddress("test@example.com") },
+                Subject = "Test",
+                Body = "Test body"
+            };
+            mail.ReplyToList.Add(new MailAddress("reply@example.com"));
+
+            // Act
+            var message = await _sut.CreateBasicMessageForTesting(mail);
+
+            // Assert
+            message.ReplyTo.ShouldBe("reply@example.com");
+        }
+
+        [Fact]
+        public async Task SendEmailAsync_WithCustomHeaders_ShouldIncludeHeaders()
+        {
+            // Arrange
+            var mail = new MailMessage
+            {
+                To = { new MailAddress("test@example.com") },
+                Subject = "Test",
+                Body = "Test body"
+            };
+            mail.Headers.Add("X-Custom-Header", "CustomValue");
+
+            _mockClientWrapper.SendMessageAsync(Arg.Any<PostmarkMessage>())
+                .Returns(new PostmarkResponse { Status = PostmarkStatus.Success });
+
+            // Act
+            await _sut.SendEmailAsync(mail);
+
+            // Assert
+            await _mockClientWrapper.Received(1).SendMessageAsync(Arg.Is<PostmarkMessage>(msg =>
+                msg.Headers != null &&
+                msg.Headers.Any(h => h.Name == "X-Custom-Header") &&
+                msg.Headers.All(h => h.Value == "CustomValue")
+            ));
+        }
+
+        // Additional configuration tests for AbpPostmarkConfiguration
+        [Fact]
+        public void AbpPostmarkConfiguration_DefaultProperties_ShouldBeSet()
+        {
+            var config = new AbpPostmarkConfiguration();
+
+            config.ApiKey.ShouldBeNull();
+            config.DefaultFromAddress.ShouldBeNull();
+            config.TrackOpens.ShouldBeNull();
+        }
+
+        [Fact]
+        public async Task SendEmailAsync_WithTag_ShouldIncludeTagHeader()
+        {
+            // Arrange
+            var mail = new MailMessage
+            {
+                To = { new MailAddress("test@example.com") },
+                Subject = "Test",
+                Body = "Test body"
+            }.WithTag("test-tag");
+
+            _mockClientWrapper.SendMessageAsync(Arg.Any<PostmarkMessage>())
+                .Returns(new PostmarkResponse { Status = PostmarkStatus.Success });
+
+            // Act
+            await _sut.SendEmailAsync(mail);
+
+            // Assert
+            await _mockClientWrapper.Received(1).SendMessageAsync(Arg.Is<PostmarkMessage>(msg =>
+                msg.Tag == "test-tag"
+            ));
+        }
+
+        [Fact]
+        public async Task SendEmailAsync_WithTrackLinks_Enabled_ShouldSetTrackLinksOption()
+        {
+            // Arrange
+            var mail = new MailMessage
+            {
+                To = { new MailAddress("test@example.com") },
+                Subject = "Test",
+                Body = "Test body"
+            }.WithTrackLinks(true);
+
+            _mockClientWrapper.SendMessageAsync(Arg.Any<PostmarkMessage>())
+                .Returns(new PostmarkResponse { Status = PostmarkStatus.Success });
+
+            // Act
+            await _sut.SendEmailAsync(mail);
+
+            // Assert
+            await _mockClientWrapper.Received(1).SendMessageAsync(Arg.Is<PostmarkMessage>(msg =>
+                msg.TrackLinks == LinkTrackingOptions.HtmlAndText
+            ));
+        }
+
+        [Fact]
+        public async Task SendEmailAsync_WithTrackLinks_Disabled_ShouldSetNoTracking()
+        {
+            // Arrange
+            var mail = new MailMessage
+            {
+                To = { new MailAddress("test@example.com") },
+                Subject = "Test",
+                Body = "Test body"
+            }.WithTrackLinks(false);
+
+            _mockClientWrapper.SendMessageAsync(Arg.Any<PostmarkMessage>())
+                .Returns(new PostmarkResponse { Status = PostmarkStatus.Success });
+
+            // Act
+            await _sut.SendEmailAsync(mail);
+
+            // Assert
+            await _mockClientWrapper.Received(1).SendMessageAsync(Arg.Is<PostmarkMessage>(msg =>
+                msg.TrackLinks == LinkTrackingOptions.None
+            ));
+        }
+
+        [Fact]
+        public void WithTag_ShouldAddHeader()
+        {
+            // Arrange
+            var mail = new MailMessage();
+
+            // Act
+            var result = mail.WithTag("test-tag");
+
+            // Assert
+            result.Headers[PostmarkEmailSender.TagHeader].ShouldBe("test-tag");
+            result.ShouldBe(mail); // Verifies fluent return
+        }
+
+        [Fact]
+        public void WithTrackLinks_ShouldAddHeader()
+        {
+            // Arrange
+            var mail = new MailMessage();
+
+            // Act
+            var result = mail.WithTrackLinks(true);
+
+            // Assert
+            result.Headers[PostmarkEmailSender.TrackLinksHeader].ShouldBe("True");
+            result.ShouldBe(mail); // Verifies fluent return
+        }
+
+        [Fact]
+        public async Task SendEmailAsync_WithTemplateAndTag_ShouldIncludeTagInTemplatedMessage()
+        {
+            // Arrange
+            var mail = new MailMessage
+            {
+                To = { new MailAddress("test@example.com") },
+                Subject = "Test",
+                Body = "{}"
+            }.WithTag("test-tag");
+            mail.Headers.Add("X-Postmark-Template-Id", "12345");
+
+            _mockClientWrapper.SendEmailWithTemplateAsync(Arg.Any<TemplatedPostmarkMessage>())
+                .Returns(new PostmarkResponse { Status = PostmarkStatus.Success });
+
+            // Act
+            await _sut.SendEmailAsync(mail);
+
+            // Assert
+            await _mockClientWrapper.Received(1).SendEmailWithTemplateAsync(Arg.Is<TemplatedPostmarkMessage>(msg =>
+                msg.Tag == "test-tag"
+            ));
+        }
     }
 }
