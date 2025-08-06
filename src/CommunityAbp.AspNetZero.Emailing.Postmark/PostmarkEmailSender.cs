@@ -138,7 +138,8 @@ public class PostmarkEmailSender : EmailSenderBase
                 {
                     Name = attachment.Name,
                     Content = Convert.ToBase64String(memoryStream.ToArray()),
-                    ContentType = attachment.ContentType.MediaType
+                    ContentType = attachment.ContentType.MediaType,
+                    ContentId = attachment.ContentId
                 });
 
                 Logger.LogDebug("Processed attachment: {AttachmentName} ({ContentType})",
