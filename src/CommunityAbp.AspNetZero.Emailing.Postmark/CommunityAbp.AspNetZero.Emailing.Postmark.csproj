@@ -1,84 +1,86 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;netstandard2.1;net8.0</TargetFrameworks>
+    <!--
+      TFM / ABP matrix (each ABP major line ships a single TFM):
+        netstandard2.0, netstandard2.1, net8.0 -> Abp 9.4.x  (nuget.org, last line with a netstandard2.0 build)
+        net9.0                                 -> Abp 10.5.x (nuget.org, net9.0 only)
+        net10.0                                -> Abp 11.3.x (AspNetZero private feed only, net10.0 only)
+    -->
+    <TargetFrameworks>netstandard2.0;netstandard2.1;net8.0;net9.0;net10.0</TargetFrameworks>
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
-    <EnablePackageValidation>true</EnablePackageValidation>
     <WarningsAsErrors>Nullable</WarningsAsErrors>
-    <AssemblyName>CommunityAbp.AspNetZero.Emailing.Postmark</AssemblyName>
-    <Authors>kfrancis</Authors>
-    <Company>Clinical Support Systems</Company>
-    <PackageId>CommunityAbp.AspNetZero.Emailing.Postmark</PackageId>
-    <PackageTags>asp.net;asp.net mvc;boilerplate;application framework;web framework;framework;domain driven design;postmark;email</PackageTags>
+    <DebugType>portable</DebugType>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <EnablePackageValidation>true</EnablePackageValidation>
     <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
     <GenerateAssemblyDescriptionAttribute>false</GenerateAssemblyDescriptionAttribute>
     <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
     <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
     <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
     <GenerateAssemblyCopyrightAttribute>false</GenerateAssemblyCopyrightAttribute>
-    <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <RepositoryType>git</RepositoryType>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Package">
+    <AssemblyName>CommunityAbp.AspNetZero.Emailing.Postmark</AssemblyName>
+    <PackageId>CommunityAbp.AspNetZero.Emailing.Postmark</PackageId>
+    <Authors>kfrancis</Authors>
+    <Company>Clinical Support Systems</Company>
     <Description>A seamless integration module that enables Postmark transactional email delivery services for AspNetZero and ABP Framework applications.</Description>
-    <RepositoryUrl>https://github.com/kfrancis/CommunityAbp.AspNetZero.Emailing.Postmark</RepositoryUrl>
+    <PackageTags>asp.net;asp.net mvc;boilerplate;application framework;web framework;framework;domain driven design;postmark;email</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/kfrancis/CommunityAbp.AspNetZero.Emailing.Postmark</PackageProjectUrl>
-    <!-- Include symbol files (*.pdb) in the built .nupkg -->
-    <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
+    <RepositoryUrl>https://github.com/kfrancis/CommunityAbp.AspNetZero.Emailing.Postmark</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageIcon>AbpPostmarkIcon.png</PackageIcon>
+    <PackageReleaseNotes>
+Adds net9.0 (ABP 10.5.x) and net10.0 (ABP 11.3.x / AspNetZero 15.x) targets.
+The net10.0 target depends on Abp 11.3.0, which is published only on the AspNetZero licensed NuGet feed
+(not nuget.org). net10.0 consumers must add that feed to their NuGet.Config before restoring.
+netstandard2.0 / netstandard2.1 / net8.0 targets are unchanged (Abp 9.4.x).
+Public API (AbpPostmarkModule, Configuration.Modules.AbpPostmark(), PostmarkEmailSender) is unchanged.
+    </PackageReleaseNotes>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <!-- Include symbol files (*.pdb) in the built .nupkg -->
+    <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
   </PropertyGroup>
 
-  <ItemGroup>
-    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
-  </ItemGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netstandard2.0|AnyCPU'">
-    <DebugType>portable</DebugType>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netstandard2.1|AnyCPU'">
-    <DebugType>portable</DebugType>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net8.0|AnyCPU'">
-    <DebugType>portable</DebugType>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|netstandard2.0|AnyCPU'">
-    <DebugType>portable</DebugType>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|netstandard2.1|AnyCPU'">
-    <DebugType>portable</DebugType>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net8.0|AnyCPU'">
-    <DebugType>portable</DebugType>
-  </PropertyGroup>
-
-  <PropertyGroup>
+  <PropertyGroup Label="Versioning">
     <MinVerTagPrefix>v</MinVerTagPrefix>
     <MinVerSkip>false</MinVerSkip>
   </PropertyGroup>
 
   <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+    <None Include="AbpPostmarkIcon.png" Pack="true" PackagePath="" />
+  </ItemGroup>
+
+  <ItemGroup Label="Build-only">
+    <PackageReference Include="DotNet.ReproducibleBuilds" Version="1.2.25" PrivateAssets="all" IncludeAssets="runtime; build; native; contentfiles; analyzers; buildtransitive" />
+    <PackageReference Include="MinVer" Version="6.0.0" PrivateAssets="all" IncludeAssets="runtime; build; native; contentfiles; analyzers; buildtransitive" />
+  </ItemGroup>
+
+  <!-- ABP 9.x line: nuget.org -->
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0' Or '$(TargetFramework)' == 'netstandard2.1' Or '$(TargetFramework)' == 'net8.0'">
     <PackageReference Include="Abp" Version="9.4.2" />
-    <PackageReference Include="DotNet.ReproducibleBuilds" Version="1.2.25">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="8.0.0" />
-    <PackageReference Include="MinVer" Version="6.0.0">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.0" />
     <PackageReference Include="Postmark" Version="5.2.0" />
   </ItemGroup>
 
-  <ItemGroup>
-    <None Include="AbpPostmarkIcon.png" Pack="true" PackagePath="" />
+  <!-- ABP 10.x line: nuget.org -->
+  <ItemGroup Condition="'$(TargetFramework)' == 'net9.0'">
+    <PackageReference Include="Abp" Version="10.5.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.15" />
+    <PackageReference Include="Postmark" Version="5.4.1" />
+  </ItemGroup>
+
+  <!-- ABP 11.x line: AspNetZero private feed only -->
+  <ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
+    <PackageReference Include="Abp" Version="11.3.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.9" />
+    <PackageReference Include="Postmark" Version="5.4.1" />
   </ItemGroup>
 
 </Project>
