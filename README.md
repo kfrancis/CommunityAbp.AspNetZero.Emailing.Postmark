@@ -4,7 +4,7 @@ A seamless integration module that enables Postmark email delivery services for 
 
 ## Overview
 
-This package provides a robust implementation of email-sending capabilities using Postmark's API within the AspNetZero and ABP Framework ecosystem. It extends the default emailing system (MailKit) with Postmark's powerful features while maintaining the simplicity and flexibility of ABP's modular architecture.
+This package provides a robust implementation of email-sending capabilities using Postmark's API within the AspNetZero and ABP Framework ecosystem. It replaces the default transport (`IEmailSender`, normally MailKit) with Postmark's API while maintaining the simplicity and flexibility of ABP's modular architecture.
 
 ## Features
 
@@ -17,6 +17,23 @@ This package provides a robust implementation of email-sending capabilities usin
 - Support for both synchronous and asynchronous sending
 - Batch email processing capabilities
 
+## Framework Support
+
+Each ABP major line ships a single target framework, so the package multi-targets and picks the matching ABP dependency per TFM:
+
+| Your app targets | Package asset used | ABP dependency | Where ABP comes from |
+|------------------|--------------------|----------------|----------------------|
+| net10.0 (AspNetZero 15.x) | `net10.0` | `Abp >= 11.3.0` | **AspNetZero licensed feed only** (see below) |
+| net9.0 (AspNetZero 14.x) | `net9.0` | `Abp >= 10.5.0` | nuget.org |
+| net8.0 (AspNetZero 13.x) | `net8.0` | `Abp >= 9.4.2` | nuget.org |
+| netstandard2.0 / 2.1 | `netstandard2.x` | `Abp >= 9.4.2` | nuget.org |
+
+> **net10.0 consumers: the AspNetZero feed is required.**
+> ABP 11.x packages are not published to nuget.org; they exist only on the licensed AspNetZero NuGet feed
+> (`https://nuget.aspnetzero.com/<your-key>/v3/index.json`). Restoring this package's `net10.0` asset
+> will fail with `NU1102: Unable to find package Abp with version (>= 11.3.0)` until that feed is added to your solution's
+> `NuGet.Config` (AspNetZero 15.x solutions already have it). Older targets are unaffected.
+
 ## Installation
 
 ```bash
@@ -26,9 +43,9 @@ dotnet add package CommunityAbp.AspNetZero.Emailing.Postmark
 ## Quick Start
 
 1. Install the package
-2. Configure your Postmark API credentials in appsettings.json
-3. Register the module in your application
-4. Start sending emails using Postmark's infrastructure
+2. Add the `Postmark` section to `appsettings.json`
+3. Depend on `AbpPostmarkModule` and configure it in `PreInitialize`
+4. Inject `IEmailSender` as usual; emails now go through Postmark
 
 ## Configuration
 
@@ -40,6 +57,42 @@ dotnet add package CommunityAbp.AspNetZero.Emailing.Postmark
   }
 }
 ```
+
+The package does not read `IConfiguration` itself; wire the values up in your module (this is the usual
+AspNetZero `*CoreModule` or `*ApplicationModule`):
+
+```csharp
+using Abp.Modules;
+using CommunityAbp.AspNetZero.Emailing.Postmark;
+
+[DependsOn(typeof(AbpPostmarkModule))]
+public class MyProjectCoreModule : AbpModule
+{
+    private readonly IConfigurationRoot _appConfiguration;
+
+    public MyProjectCoreModule(IWebHostEnvironment env)
+    {
+        _appConfiguration = AppConfigurations.Get(env.ContentRootPath, env.EnvironmentName);
+    }
+
+    public override void PreInitialize()
+    {
+        Configuration.Modules.AbpPostmark().ApiKey = _appConfiguration["Postmark:ApiKey"];
+        Configuration.Modules.AbpPostmark().DefaultFromAddress = _appConfiguration["Postmark:FromAddress"];
+        Configuration.Modules.AbpPostmark().TrackOpens = true; // optional
+    }
+}
+```
+
+`AbpPostmarkModule` replaces `IEmailSender` with `PostmarkEmailSender` (transient), so anything that already
+injects `IEmailSender` (for example AspNetZero's `UserEmailer`) switches transport without code changes.
+
+### AspNetZero 15.x note
+
+AspNetZero 15 moved email templates into the database (`EmailTemplate` entity + `EmailTemplateProvider`).
+This package only replaces the transport, not the templates, so DB-backed templates keep working: the
+rendered `MailMessage` is handed to Postmark as-is. Postmark-side templates (`UseTemplate(...)`) remain
+available as an alternative.
 
 ## Features
 
@@ -85,9 +138,10 @@ dotnet add package CommunityAbp.AspNetZero.Emailing.Postmark
 - [x] Message ID tracking
 
 ### Framework Support
-- [x] .NET Standard 2.0 support
-- [x] .NET Standard 2.1 support
-- [x] .NET 8.0 support
+- [x] .NET Standard 2.0 / 2.1 (ABP 9.4.x)
+- [x] .NET 8.0 (ABP 9.4.x)
+- [x] .NET 9.0 (ABP 10.5.x)
+- [x] .NET 10.0 (ABP 11.3.x / AspNetZero 15.x)
 
 ### Developer Experience
 - [x] Fluent API for template usage
@@ -169,6 +223,23 @@ mail.UseTemplate("welcome-email", new { UserName = "John" });
 await _emailSender.SendEmailAsync(mail);
 ```
 
+## Building from source
+
+The repository's `NuGet.Config` references the AspNetZero feed as `%ASPNETZERO_NUGET_URL%` so the
+per-customer URL is never committed. Set that environment variable before restoring:
+
+```bash
+export ASPNETZERO_NUGET_URL="https://nuget.aspnetzero.com/<your-key>/v3/index.json"
+dotnet build
+```
+
+On Windows: `setx ASPNETZERO_NUGET_URL "https://nuget.aspnetzero.com/<your-key>/v3/index.json"` (then open a new shell).
+
+CI reads the same value from the `ASPNETZERO_NUGET_URL` repository secret. Pull requests from forks do not
+receive secrets, so their restore of the `net10.0` target will fail; that is expected.
+
+Versioning uses [MinVer](https://github.com/adamralph/minver) with a `v` tag prefix; pushing a `vX.Y.Z` tag
+and publishing a GitHub release triggers the nuget.org push.
 
 ## License
 
