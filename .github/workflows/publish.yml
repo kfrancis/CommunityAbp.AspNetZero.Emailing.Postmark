@@ -17,6 +17,11 @@ env:
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
   DOTNET_NOLOGO: true
   NuGetDirectory: ${{ github.workspace}}/nuget
+  # The net10.0 target depends on Abp 11.x, which is only published on the AspNetZero licensed feed.
+  # NuGet.Config references the feed as %ASPNETZERO_FEED_URL%; the URL (which embeds a per-customer
+  # key) lives in the ASPNETZERO_FEED_URL repository secret and is never committed.
+  # NOTE: secrets are not available to pull requests from forks, so restore will fail for those.
+  ASPNETZERO_FEED_URL: ${{ secrets.ASPNETZERO_FEED_URL }}
 
 defaults:
   run:
@@ -36,9 +41,16 @@ jobs:
       with:
         global-json-file: 'global.json'
 
+    - name: Verify AspNetZero feed secret is present
+      run: |
+        if ([string]::IsNullOrWhiteSpace($env:ASPNETZERO_FEED_URL)) {
+          Write-Error "ASPNETZERO_FEED_URL secret is not set; the net10.0 target cannot restore Abp 11.x."
+          exit 1
+        }
+
     # Create the NuGet package in the folder from the environment variable NuGetDirectory
     - run: dotnet pack src/CommunityAbp.AspNetZero.Emailing.Postmark/CommunityAbp.AspNetZero.Emailing.Postmark.csproj --configuration Release --output ${{ env.NuGetDirectory }} -p:IncludeSymbols=true -p:SymbolPackageFormat=snupkg -p:MinVerTag=$(git describe --tags)
-  
+
     # Step to prepare the artifacts by copying *.nupkg and *.snpkg files to a temporary directory
     - name: Prepare Artifacts
       run: |
@@ -84,8 +96,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4.2.2
+    # The test project targets net8.0, net9.0 and net10.0 (one per supported ABP line), so the
+    # older runtimes are installed alongside the SDK pinned by global.json.
     - name: Setup .NET
       uses: actions/setup-dotnet@v4.2.0
+      with:
+        global-json-file: 'global.json'
+        dotnet-version: |
+          8.0.x
+          9.0.x
     - name: Run tests
       run: dotnet test --configuration Release --filter 'FullyQualifiedName!~TestBase'
 
