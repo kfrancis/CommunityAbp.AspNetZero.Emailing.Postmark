@@ -225,17 +225,17 @@ await _emailSender.SendEmailAsync(mail);
 
 ## Building from source
 
-The repository's `NuGet.Config` references the AspNetZero feed as `%ASPNETZERO_FEED_URL%` so the
+The repository's `NuGet.Config` references the AspNetZero feed as `%ASPNETZERO_NUGET_URL%` so the
 per-customer URL is never committed. Set that environment variable before restoring:
 
 ```bash
-export ASPNETZERO_FEED_URL="https://nuget.aspnetzero.com/<your-key>/v3/index.json"
+export ASPNETZERO_NUGET_URL="https://nuget.aspnetzero.com/<your-key>/v3/index.json"
 dotnet build
 ```
 
-On Windows: `setx ASPNETZERO_FEED_URL "https://nuget.aspnetzero.com/<your-key>/v3/index.json"` (then open a new shell).
+On Windows: `setx ASPNETZERO_NUGET_URL "https://nuget.aspnetzero.com/<your-key>/v3/index.json"` (then open a new shell).
 
-CI reads the same value from the `ASPNETZERO_FEED_URL` repository secret. Pull requests from forks do not
+CI reads the same value from the `ASPNETZERO_NUGET_URL` repository secret. Pull requests from forks do not
 receive secrets, so their restore of the `net10.0` target will fail; that is expected.
 
 Versioning uses [MinVer](https://github.com/adamralph/minver) with a `v` tag prefix; pushing a `vX.Y.Z` tag

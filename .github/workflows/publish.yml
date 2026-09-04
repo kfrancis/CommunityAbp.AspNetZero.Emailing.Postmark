@@ -18,10 +18,10 @@ env:
   DOTNET_NOLOGO: true
   NuGetDirectory: ${{ github.workspace}}/nuget
   # The net10.0 target depends on Abp 11.x, which is only published on the AspNetZero licensed feed.
-  # NuGet.Config references the feed as %ASPNETZERO_FEED_URL%; the URL (which embeds a per-customer
-  # key) lives in the ASPNETZERO_FEED_URL repository secret and is never committed.
+  # NuGet.Config references the feed as %ASPNETZERO_NUGET_URL%; the URL (which embeds a per-customer
+  # key) lives in the ASPNETZERO_NUGET_URL repository secret and is never committed.
   # NOTE: secrets are not available to pull requests from forks, so restore will fail for those.
-  ASPNETZERO_FEED_URL: ${{ secrets.ASPNETZERO_FEED_URL }}
+  ASPNETZERO_NUGET_URL: ${{ secrets.ASPNETZERO_NUGET_URL }}
 
 defaults:
   run:
@@ -43,8 +43,8 @@ jobs:
 
     - name: Verify AspNetZero feed secret is present
       run: |
-        if ([string]::IsNullOrWhiteSpace($env:ASPNETZERO_FEED_URL)) {
-          Write-Error "ASPNETZERO_FEED_URL secret is not set; the net10.0 target cannot restore Abp 11.x."
+        if ([string]::IsNullOrWhiteSpace($env:ASPNETZERO_NUGET_URL)) {
+          Write-Error "ASPNETZERO_NUGET_URL secret is not set; the net10.0 target cannot restore Abp 11.x."
           exit 1
         }
 
