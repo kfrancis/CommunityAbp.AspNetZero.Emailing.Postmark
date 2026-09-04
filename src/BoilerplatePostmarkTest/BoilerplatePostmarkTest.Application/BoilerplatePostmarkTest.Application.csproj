@@ -8,14 +8,14 @@
     <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
     <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
     <RootNamespace>BoilerplatePostmarkTest</RootNamespace>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\CommunityAbp.AspNetZero.Emailing.Postmark\CommunityAbp.AspNetZero.Emailing.Postmark.csproj" />
     <ProjectReference Include="..\BoilerplatePostmarkTest.Core\BoilerplatePostmarkTest.Core.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Abp.EntityFrameworkCore" Version="9.4.1" />
-    <PackageReference Include="Abp.AutoMapper" Version="9.4.1" />
+    <PackageReference Include="Abp.EntityFrameworkCore" Version="11.3.0" />
+    <PackageReference Include="Abp.AutoMapper" Version="11.3.0" />
   </ItemGroup>
 </Project>
